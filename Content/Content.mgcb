@@ -1,8 +1,8 @@
 
 #----------------------------- Global Properties ----------------------------#
 
-/outputDir:bin/$(Platform)
-/intermediateDir:obj/$(Platform)
+/outputDir:bin/$(Platform)/Content
+/intermediateDir:bin/$(Platform)/Content
 /platform:DesktopGL
 /config:
 /profile:Reach
@@ -12,4 +12,16 @@
 
 
 #---------------------------------- Content ---------------------------------#
+
+#begin TestPlayerSprite.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:TestPlayerSprite.png
 

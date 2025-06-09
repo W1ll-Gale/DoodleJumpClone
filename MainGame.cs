@@ -9,6 +9,11 @@ public class MainGame : Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
+    private Texture2D _playerTexture;
+
+    private Vector2 _playerPosition;
+    private float _scale = 4f;
+
     public MainGame()
     {
         _graphics = new GraphicsDeviceManager(this);
@@ -18,7 +23,7 @@ public class MainGame : Game
 
     protected override void Initialize()
     {
-        // TODO: Add your initialization logic here
+        _playerPosition = new Vector2(_graphics.PreferredBackBufferWidth / 2f, _graphics.PreferredBackBufferHeight /2f);
 
         base.Initialize();
     }
@@ -27,15 +32,13 @@ public class MainGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // TODO: use this.Content to load your game content here
+        _playerTexture = Content.Load<Texture2D>("TestPlayerSprite");
     }
 
     protected override void Update(GameTime gameTime)
     {
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
-
-        // TODO: Add your update logic here
 
         base.Update(gameTime);
     }
@@ -44,7 +47,23 @@ public class MainGame : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        // TODO: Add your drawing code here
+        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+
+        var origin = new Vector2(_playerTexture.Width / 2f, _playerTexture.Height / 2f);
+
+        _spriteBatch.Draw(
+            _playerTexture,
+            _playerPosition,
+            null,
+            Color.White,
+            0f,
+            origin,
+            _scale,
+            SpriteEffects.None,
+            0f
+        );
+
+        _spriteBatch.End();
 
         base.Draw(gameTime);
     }
