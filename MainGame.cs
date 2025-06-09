@@ -12,7 +12,20 @@ public class MainGame : Game
     private Texture2D _playerTexture;
 
     private Vector2 _playerPosition;
+    private Vector2 _playerVelocity;
+    private bool _isGrounded;
+
+    private const float Gravity = 2000f;
+    private const float JumpForce = -800f;
+    private const float MoveSpeed = 350f;
+    private const float Friction = 0.90f;
+
+    private KeyboardState _currentKeyboardState;
+    private KeyboardState _previousKeyboardState;
+
     private float _scale = 4f;
+
+    private SpriteEffects _spriteEffect = SpriteEffects.None;
 
     public MainGame()
     {
@@ -37,8 +50,67 @@ public class MainGame : Game
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-            Exit();
+        var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        _previousKeyboardState = _currentKeyboardState;
+        _currentKeyboardState = Keyboard.GetState();
+
+        float horizontalMovement = 0f;
+
+        if (_currentKeyboardState.IsKeyDown(Keys.A))
+        {
+            horizontalMovement -= MoveSpeed;
+            _spriteEffect = SpriteEffects.FlipHorizontally;
+        }
+        if (_currentKeyboardState.IsKeyDown(Keys.D))
+        {
+            horizontalMovement += MoveSpeed;
+            _spriteEffect = SpriteEffects.None;
+        }
+
+        _playerVelocity.X = horizontalMovement;
+
+        _isGrounded = _playerPosition.Y + (_playerTexture.Height * _scale) / 2f >= _graphics.GraphicsDevice.Viewport.Height;
+
+        bool isJumping = _currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space);
+
+        if(isJumping && _isGrounded)
+        {
+            _playerVelocity.Y = JumpForce;
+        }
+
+        if (!_isGrounded)
+        {
+            _playerVelocity.Y += Gravity * deltaTime;
+        }
+
+        _playerPosition += _playerVelocity * deltaTime;
+
+        int windowHeight = _graphics.GraphicsDevice.Viewport.Height;
+        float halfScaledHeight = (_playerTexture.Height * _scale) / 2f;
+        if (_playerPosition.Y + halfScaledHeight > windowHeight)
+        {
+            _playerPosition.Y = windowHeight - halfScaledHeight;
+
+            if (_playerVelocity.Y > 0)
+            {
+                _playerVelocity.Y = 0f;
+            }
+        }
+
+        float halfScaledWidth = (_playerTexture.Width * _scale) / 2f;
+        int windowWidth = _graphics.GraphicsDevice.Viewport.Width;
+
+        if (_playerPosition.X - halfScaledWidth < 0)
+        {
+            _playerPosition.X = halfScaledWidth;
+            _playerVelocity.X = 0;
+        }
+        if (_playerPosition.X + halfScaledWidth > windowWidth)
+        {
+            _playerPosition.X = windowWidth - halfScaledWidth;
+            _playerVelocity.X = 0;
+        }
 
         base.Update(gameTime);
     }
@@ -59,7 +131,7 @@ public class MainGame : Game
             0f,
             origin,
             _scale,
-            SpriteEffects.None,
+            _spriteEffect,
             0f
         );
 
