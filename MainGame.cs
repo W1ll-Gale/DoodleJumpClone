@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
 
 namespace DoodleJumpClone;
 
@@ -12,6 +13,10 @@ public class MainGame : Game
     private float _cameraY;
 
     private Player _player;
+    private Texture2D _playerTexture;
+
+    private List<Platform> _platforms;
+    private Texture2D _platformTexture;
 
     public MainGame()
     {
@@ -31,8 +36,15 @@ public class MainGame : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        Texture2D playerTexture = Content.Load<Texture2D>("TestPlayerSprite");
-        _player = new Player(playerTexture, Vector2.Zero);
+        _playerTexture = Content.Load<Texture2D>("TestPlayerSprite");
+        _player = new Player(_playerTexture, Vector2.Zero);
+
+        _platformTexture = new Texture2D(GraphicsDevice, 1, 1);
+        _platformTexture.SetData(new[] { Color.White });
+        _platforms = new List<Platform>();
+
+        _platforms.Add(new Platform(_platformTexture, new Vector2(100, 400), 100, 20));
+        _platforms.Add(new Platform(_platformTexture, new Vector2(300, 300), 100, 20));
 
     }
 
@@ -41,7 +53,12 @@ public class MainGame : Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        _player.Update(gameTime, GraphicsDevice);
+        foreach (Platform platform in _platforms)
+        {
+            platform.Update(gameTime, GraphicsDevice.Viewport);
+        }
+
+        _player.Update(gameTime, GraphicsDevice, _platforms);
 
         base.Update(gameTime);
     }
@@ -50,10 +67,17 @@ public class MainGame : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        var cameraTransform = Matrix.CreateTranslation(0, (int)_cameraY, 0);
+        Matrix cameraTransform = Matrix.CreateTranslation(0, (int)_cameraY, 0);
+
         _spriteBatch.Begin(transformMatrix: cameraTransform, samplerState: SamplerState.PointClamp);
         _player.Draw(_spriteBatch);
+        _spriteBatch.End();
 
+        _spriteBatch.Begin(transformMatrix: cameraTransform);
+        foreach (Platform platform in _platforms)
+        {
+            platform.Draw(_spriteBatch);
+        }
         _spriteBatch.End();
 
         base.Draw(gameTime);

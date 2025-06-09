@@ -9,9 +9,12 @@ namespace DoodleJumpClone
     {
         private Texture2D _texture;
         public Vector2 _position;
+        private Vector2 _previousPosition;
         private Vector2 _velocity;
         private bool _isGrounded;
         private SpriteEffects _spriteEffect = SpriteEffects.None;
+
+        private Platform _platformPlayerIsOn = null;
 
         private const float Gravity = 1200f;
         private const float JumpForce = -600f;
@@ -21,8 +24,17 @@ namespace DoodleJumpClone
         private KeyboardState _currentKeyboardState;
         private KeyboardState _previousKeyboardState;
 
+        private const int CollisionWidth = (int)(18 * Scale);
+        private const int CollisionHeight = (int)(22 * Scale);
+
         public int ScaledWidth => (int)(_texture.Width * Scale);
         public int ScaledHeight => (int)(_texture.Height * Scale);
+
+        public Rectangle BoundingBox => new Rectangle(
+            (int)(_position.X - CollisionWidth / 2f),
+            (int)(_position.Y - CollisionHeight / 2f),
+            CollisionWidth,
+            CollisionHeight);
 
         public Player(Texture2D texture, Vector2 position)
         {
@@ -30,11 +42,13 @@ namespace DoodleJumpClone
             _position = position;
         }
 
-        public void Update(GameTime gameTime, GraphicsDevice graphicsDevice)
+        public void Update(GameTime gameTime, GraphicsDevice graphicsDevice, List<Platform> platforms)
         {
-            var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             _previousKeyboardState = _currentKeyboardState;
             _currentKeyboardState = Keyboard.GetState();
+
+            _previousPosition = _position;
 
             float horizontalMovement = 0f;
             if (_currentKeyboardState.IsKeyDown(Keys.A))
@@ -49,15 +63,6 @@ namespace DoodleJumpClone
             }
             _velocity.X = horizontalMovement;
 
-            _isGrounded = _position.Y + (_texture.Height * Scale) / 2f >= graphicsDevice.Viewport.Height;
-
-            bool isJumping = _currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space);
-
-            if (isJumping && _isGrounded)
-            {
-                _velocity.Y = JumpForce;
-            }
-
             if (!_isGrounded)
             {
                 _velocity.Y += Gravity * deltaTime;
@@ -65,36 +70,91 @@ namespace DoodleJumpClone
 
             _position += _velocity * deltaTime;
 
-            int windowHeight = graphicsDevice.Viewport.Height;
-            float halfScaledHeight = (_texture.Height * Scale) / 2f;
-            if (_position.Y + halfScaledHeight > windowHeight)
+            float halfCollisionWidth = CollisionWidth / 2f;
+            int windowWidth = graphicsDevice.Viewport.Width;
+            if (_position.X < halfCollisionWidth)
             {
-                _position.Y = windowHeight - halfScaledHeight;
+                _position.X = halfCollisionWidth;
+                _velocity.X = 0;
+            }
+            if (_position.X > windowWidth - halfCollisionWidth)
+            {
+                _position.X = windowWidth - halfCollisionWidth;
+                _velocity.X = 0;
+            }
 
-                if (_velocity.Y > 0)
+            if (_platformPlayerIsOn != null)
+            {
+                float playerLeft = _position.X - CollisionWidth / 2f;
+                float playerRight = _position.X + CollisionWidth / 2f;
+                Rectangle platformBox = _platformPlayerIsOn.BoundingBox;
+
+                bool stillHorizontallyOverlapping = playerRight > platformBox.Left && playerLeft < platformBox.Right;
+
+                if (!stillHorizontallyOverlapping)
                 {
-                    _velocity.Y = 0f;
+                    _isGrounded = false;
+                    _platformPlayerIsOn = null;
                 }
             }
 
-            float halfScaledWidth = (_texture.Width * Scale) / 2f;
-            int windowWidth = graphicsDevice.Viewport.Width;
+            HandleCollisions(graphicsDevice.Viewport, platforms);
 
-            if (_position.X - halfScaledWidth < 0)
+            bool isJumping = _currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space);
+            if (isJumping && _isGrounded)
             {
-                _position.X = halfScaledWidth;
-                _velocity.X = 0;
+                _velocity.Y = JumpForce;
+                _isGrounded = false;
+                _platformPlayerIsOn = null;
             }
-            if (_position.X + halfScaledWidth > windowWidth)
+        }
+
+        private void HandleCollisions(Viewport viewport, List<Platform> platforms)
+        {
+            _isGrounded = false;
+            _platformPlayerIsOn = null;
+
+            float halfCollisionHeight = CollisionHeight / 2f;
+            float playerBottom = _position.Y + halfCollisionHeight;
+            float prevPlayerBottom = _previousPosition.Y + halfCollisionHeight;
+
+            if (playerBottom >= viewport.Height)
             {
-                _position.X = windowWidth - halfScaledWidth;
-                _velocity.X = 0;
+                _position.Y = viewport.Height - halfCollisionHeight;
+                _velocity.Y = 0f;
+                _isGrounded = true;
+                return;
+            }
+
+            if (_velocity.Y >= 0)
+            {
+                foreach (Platform platform in platforms)
+                {
+                    Rectangle platformBox = platform.BoundingBox;
+                    float platformTop = platformBox.Top;
+
+                    float playerLeft = _position.X - CollisionWidth / 2f;
+                    float playerRight = _position.X + CollisionWidth / 2f;
+
+                    bool wasAbove = prevPlayerBottom <= platformTop;
+                    bool nowBelow = playerBottom >= platformTop;
+                    bool horizontallyOverlapping = playerRight > platformBox.Left && playerLeft < platformBox.Right;
+
+                    if (wasAbove && nowBelow && horizontallyOverlapping)
+                    {
+                        _position.Y = platformTop - halfCollisionHeight;
+                        _velocity.Y = 0f;
+                        _isGrounded = true;
+                        _platformPlayerIsOn = platform;
+                        break;
+                    }
+                }
             }
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            var origin = new Vector2(_texture.Width / 2f, _texture.Height / 2f);
+            Vector2 origin = new Vector2(_texture.Width / 2f, _texture.Height / 2f);
 
             spriteBatch.Draw(
                 _texture,
