@@ -10,8 +10,8 @@ namespace DoodleJumpClone
         private Texture2D _texture;
         private SpriteEffects _spriteEffect = SpriteEffects.None;
 
-        public Vector2 Position { get; private set; }
-        public Vector2 Velocity { get; private set; }
+        public Vector2 Position { get; set; }
+        public Vector2 Velocity { get; set; }
 
         private Vector2 _previousPosition;
         public bool IsGrounded {get; private set; }
@@ -122,14 +122,6 @@ namespace DoodleJumpClone
             float halfCollisionHeight = CollisionHeight / 2f;
             float playerBottom = position.Y + halfCollisionHeight;
             float prevPlayerBottom = _previousPosition.Y + halfCollisionHeight;
-
-            if (playerBottom >= viewport.Height)
-            {
-                position.Y = viewport.Height - halfCollisionHeight;
-                velocity.Y = 0f;
-                IsGrounded = true;
-                return;
-            }
 
             if (velocity.Y >= 0)
             {
