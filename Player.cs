@@ -76,15 +76,13 @@ namespace DoodleJumpClone
 
             float halfCollisionWidth = CollisionWidth / 2f;
             int windowWidth = graphicsDevice.Viewport.Width;
-            if (position.X < halfCollisionWidth)
-            {
-                position.X = halfCollisionWidth;
-                velocity.X = 0;
-            }
-            if (position.X > windowWidth - halfCollisionWidth)
+            if (position.X < -halfCollisionWidth)
             {
                 position.X = windowWidth - halfCollisionWidth;
-                velocity.X = 0;
+            }
+            if (position.X > windowWidth + halfCollisionWidth)
+            {
+                position.X = halfCollisionWidth;
             }
 
             if (_platformPlayerIsOn != null)

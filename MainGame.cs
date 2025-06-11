@@ -33,7 +33,11 @@ public class MainGame : Game
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
         _graphics.SynchronizeWithVerticalRetrace = false; 
-        IsFixedTimeStep = false; 
+        IsFixedTimeStep = false;
+
+        _graphics.PreferredBackBufferWidth = 600;
+        _graphics.PreferredBackBufferHeight = 800;
+        _graphics.ApplyChanges();
     }
 
     protected override void Initialize()
