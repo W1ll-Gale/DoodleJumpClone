@@ -102,14 +102,6 @@ namespace DoodleJumpClone
 
             HandleCollisions(graphicsDevice.Viewport, platforms, ref position, ref velocity);
 
-            bool isJumping = _currentKeyboardState.IsKeyDown(Keys.Space) && !_previousKeyboardState.IsKeyDown(Keys.Space);
-            if (isJumping && IsGrounded)
-            {
-                velocity.Y = JumpForce;
-                IsGrounded = false;
-                _platformPlayerIsOn = null;
-            }
-
             Position = position;
             Velocity = velocity;
         }
@@ -140,7 +132,7 @@ namespace DoodleJumpClone
                     if (wasAbove && nowBelow && horizontallyOverlapping)
                     {
                         position.Y = platformTop - halfCollisionHeight;
-                        velocity.Y = 0f;
+                        velocity.Y = JumpForce;
                         IsGrounded = true;
                         _platformPlayerIsOn = platform;
                         break;
