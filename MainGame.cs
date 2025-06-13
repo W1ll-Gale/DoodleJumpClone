@@ -23,12 +23,17 @@ public class MainGame : Game
     private float _cameraY;
     private Random _random = new Random();
     private Platform _highestPlatform;
+    private float _maxHeightReached;
 
     private Player _player;
     private Texture2D _playerTexture;
 
     private List<Platform> _platforms;
     private Texture2D _platformTexture;
+
+    private int _currentScore;
+    private float _initialPlayerY;
+    private const int MovingPlatformScoreThreshold = 200;
 
     public MainGame()
     {
@@ -90,6 +95,13 @@ public class MainGame : Game
         if (playerCameraY > _cameraY)
         {
             _cameraY = playerCameraY;
+
+
+            if (_player.Position.Y < _maxHeightReached)
+            {
+                _maxHeightReached = _player.Position.Y;
+                _currentScore = (int)((_initialPlayerY - _maxHeightReached) / 10f);
+            }
         }
 
         while (_highestPlatform.BoundingBox.Y > -_cameraY - 50)
@@ -109,6 +121,15 @@ public class MainGame : Game
 
     private void GeneratePlatforms()
     {
+        PlatformType platformType = PlatformType.Static;
+
+        if (_currentScore > MovingPlatformScoreThreshold)
+        {
+            if (_random.Next(0, 5) == 0)
+            {
+                platformType = PlatformType.Moving;
+            }
+        }
         int y = _highestPlatform.BoundingBox.Y - _random.Next(80, 145);
         const float maxHorizontalReach = 280f;
         float previousPlatformX = _highestPlatform.BoundingBox.Center.X;
@@ -122,9 +143,9 @@ public class MainGame : Game
             minX = _graphics.PreferredBackBufferWidth / 2f - 150;
             maxX = _graphics.PreferredBackBufferWidth / 2f + 150;
         }
-        var x = _random.Next((int)minX, (int)maxX);
+        int x = _random.Next((int)minX, (int)maxX);
 
-        Platform newPlatform = new Platform(_platformTexture, new Vector2(x, y), 100, 20);
+        Platform newPlatform = new Platform(_platformTexture, new Vector2(x, y), 100, 20, platformType);
         _platforms.Add(newPlatform);
         _highestPlatform = newPlatform;
     }
@@ -133,14 +154,18 @@ public class MainGame : Game
     {
         _platforms.Clear();
         _cameraY = 0;
+        _currentScore = 0;
 
-        Platform startPlatform = new Platform(_platformTexture, new Vector2(_graphics.PreferredBackBufferWidth / 2f - 50, _graphics.PreferredBackBufferHeight - 50), 100, 20);
+        Platform startPlatform = new Platform(_platformTexture, new Vector2(_graphics.PreferredBackBufferWidth / 2f - 50, _graphics.PreferredBackBufferHeight - 50), 100, 20, PlatformType.Static);
         _platforms.Add(startPlatform);
         _highestPlatform = startPlatform;
 
         int startY = startPlatform.BoundingBox.Top - _player.ScaledHeight;
         _player.Velocity = Vector2.Zero;
         _player.Position = new Vector2(_graphics.PreferredBackBufferWidth / 2f, startY);
+
+        _initialPlayerY = startY;
+        _maxHeightReached = _initialPlayerY;
 
         while (_highestPlatform.BoundingBox.Y > -_cameraY)
         {
@@ -160,6 +185,14 @@ public class MainGame : Game
             ImGui.Text($"Position: {_player.Position}");
             ImGui.Text($"Velocity: {_player.Velocity}");
             ImGui.Text($"IsGrounded: {_player.IsGrounded}");
+        }
+
+        foreach(Platform platform in _platforms)
+        {
+            ImGui.Text($"Platform: {platform.Type}");
+            ImGui.Text($"Position: {platform.BoundingBox.Location}");
+            ImGui.Text($"Velocity: {platform.Velocity}");
+            ImGui.Text($"Size: {platform.BoundingBox.Size}");
         }
 
         ImGui.Separator();

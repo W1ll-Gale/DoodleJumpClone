@@ -4,26 +4,80 @@ using System;
 
 namespace DoodleJumpClone
 {
+    public enum PlatformType
+    {
+        Static,
+        Moving
+    }
+
     class Platform
     {
         private Texture2D _texture;
         private Rectangle _boundingBox;
+        public PlatformType Type { get; }
+
+        private float _movementRemainder = 0f;
+
+        public Vector2 Velocity;
+        private int _direction = 1;
+        private const float Speed = 100f;
 
         public Rectangle BoundingBox => _boundingBox;
 
-        public Platform(Texture2D texture, Vector2 position, int width, int height)
+        public Platform(Texture2D texture, Vector2 position, int width, int height, PlatformType type)
         {
             _texture = texture;
             _boundingBox = new Rectangle((int)position.X, (int)position.Y, width, height);
-        }
+            Type = type;
 
+            if (Type == PlatformType.Moving)
+            {
+                Velocity.X = Speed * _direction;
+            }
+        }
         public void Update(GameTime gameTime, Viewport viewport)
         {
+            if (Type == PlatformType.Moving)
+            {
+                float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+                float totalMovement = (Velocity.X * deltaTime) + _movementRemainder;
+
+                float predictedNextX = _boundingBox.X + totalMovement;
+
+                if (predictedNextX <= 0)
+                {
+                    _boundingBox.X = 0;
+                    _direction = 1;
+                    Velocity.X = Speed * _direction;
+                    _movementRemainder = 0;
+                }
+                else if (predictedNextX + _boundingBox.Width >= viewport.Width)
+                {
+                    _boundingBox.X = viewport.Width - _boundingBox.Width;
+                    _direction = -1;
+                    Velocity.X = Speed * _direction;
+                    _movementRemainder = 0;
+                }
+                else
+                {
+                    int pixelsToMove = (int)totalMovement;
+                    _boundingBox.X += pixelsToMove;
+                    _movementRemainder = totalMovement - pixelsToMove;
+                }
+            }
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(_texture, _boundingBox, Color.White);
+            Color color = Type switch
+            {
+                PlatformType.Static => Color.White,
+                PlatformType.Moving => Color.LightBlue,
+                _ => Color.White
+            };
+
+            spriteBatch.Draw(_texture, _boundingBox, color);
         }
     }
 }
