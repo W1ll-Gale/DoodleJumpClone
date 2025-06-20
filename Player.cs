@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DoodleJumpClone
 {
@@ -72,6 +73,11 @@ namespace DoodleJumpClone
                 velocity.Y += Gravity * deltaTime;
             }
 
+            if (_platformPlayerIsOn != null && _platformPlayerIsOn.Type == PlatformType.Moving)
+            {
+                position.X += _platformPlayerIsOn.Velocity.X * deltaTime;
+            }
+
             position += velocity * deltaTime;
 
             float halfCollisionWidth = CollisionWidth / 2f;
@@ -85,20 +91,12 @@ namespace DoodleJumpClone
                 position.X = halfCollisionWidth;
             }
 
-            if (_platformPlayerIsOn != null)
+            if (_platformPlayerIsOn != null && !_platformPlayerIsOn.IsCollidable)
             {
-                float playerLeft = position.X - CollisionWidth / 2f;
-                float playerRight = position.X + CollisionWidth / 2f;
-                Rectangle platformBox = _platformPlayerIsOn.BoundingBox;
-
-                bool stillHorizontallyOverlapping = playerRight > platformBox.Left && playerLeft < platformBox.Right;
-
-                if (!stillHorizontallyOverlapping)
-                {
-                    IsGrounded = false;
-                    _platformPlayerIsOn = null;
-                }
+                IsGrounded = false;
+                _platformPlayerIsOn = null;
             }
+
 
             HandleCollisions(graphicsDevice.Viewport, platforms, ref position, ref velocity);
 
@@ -117,7 +115,7 @@ namespace DoodleJumpClone
 
             if (velocity.Y >= 0)
             {
-                foreach (Platform platform in platforms)
+                foreach (Platform platform in platforms.Where(p => p.IsCollidable))
                 {
                     Rectangle platformBox = platform.BoundingBox;
                     float platformTop = platformBox.Top;
@@ -135,6 +133,8 @@ namespace DoodleJumpClone
                         velocity.Y = JumpForce;
                         IsGrounded = true;
                         _platformPlayerIsOn = platform;
+
+                        platform.OnPlayerContact();
                         break;
                     }
                 }

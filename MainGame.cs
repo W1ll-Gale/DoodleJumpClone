@@ -34,6 +34,8 @@ public class MainGame : Game
     private int _currentScore;
     private float _initialPlayerY;
     private const int MovingPlatformScoreThreshold = 200;
+    private const int DestructiblePlatformScoreThreshold = 500;
+
 
     public MainGame()
     {
@@ -123,13 +125,17 @@ public class MainGame : Game
     {
         PlatformType platformType = PlatformType.Static;
 
-        if (_currentScore > MovingPlatformScoreThreshold)
+        int platformTypeChance = _random.Next(0, 10);
+
+        if (_currentScore > DestructiblePlatformScoreThreshold && platformTypeChance < 2)
         {
-            if (_random.Next(0, 5) == 0)
-            {
-                platformType = PlatformType.Moving;
-            }
+            platformType = PlatformType.Destructible;
         }
+        else if (_currentScore > MovingPlatformScoreThreshold && platformTypeChance < 4) 
+        {
+            platformType = PlatformType.Moving;
+        }
+
         int y = _highestPlatform.BoundingBox.Y - _random.Next(80, 145);
         const float maxHorizontalReach = 280f;
         float previousPlatformX = _highestPlatform.BoundingBox.Center.X;

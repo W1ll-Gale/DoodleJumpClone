@@ -7,7 +7,8 @@ namespace DoodleJumpClone
     public enum PlatformType
     {
         Static,
-        Moving
+        Moving,
+        Destructible
     }
 
     class Platform
@@ -21,6 +22,13 @@ namespace DoodleJumpClone
         public Vector2 Velocity;
         private int _direction = 1;
         private const float Speed = 100f;
+
+        private enum State { Intact, Hit, Disappeared }
+        private State _currentState = State.Intact;
+        private float _timer;
+        private const float DisappearDuration = 0.3f; 
+
+        public bool IsCollidable { get; private set; } = true;
 
         public Rectangle BoundingBox => _boundingBox;
 
@@ -37,10 +45,25 @@ namespace DoodleJumpClone
         }
         public void Update(GameTime gameTime, Viewport viewport)
         {
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (Type == PlatformType.Destructible)
+            {
+                switch (_currentState)
+                {
+                    case State.Hit:
+                        _timer -= deltaTime;
+                        if (_timer <= 0)
+                        {
+                            _currentState = State.Disappeared;
+                            IsCollidable = false;
+                        }
+                        break;
+                }
+            }
+
             if (Type == PlatformType.Moving)
             {
-                float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
                 float totalMovement = (Velocity.X * deltaTime) + _movementRemainder;
 
                 float predictedNextX = _boundingBox.X + totalMovement;
@@ -66,14 +89,30 @@ namespace DoodleJumpClone
                     _movementRemainder = totalMovement - pixelsToMove;
                 }
             }
+
+        }
+
+        public void OnPlayerContact()
+        {
+            if (Type == PlatformType.Destructible && _currentState == State.Intact)
+            {
+                _currentState = State.Hit;
+                _timer = DisappearDuration;
+            }
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            if (_currentState == State.Disappeared)
+            {
+                return;
+            }
+
             Color color = Type switch
             {
                 PlatformType.Static => Color.White,
                 PlatformType.Moving => Color.LightBlue,
+                PlatformType.Destructible => _currentState == State.Hit ? Color.OrangeRed : Color.Brown,
                 _ => Color.White
             };
 
